@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Question</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: white;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 50px;
+            text-align: center;
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        #yesBtn {
+            background-color: #4CAF50;
+            color: white;
+            z-index: 10;
+        }
+
+        #noBtn {
+            background-color: #f44336;
+            color: white;
+            position: absolute;
+        }
+
+        #message {
+            margin-top: 20px;
+            font-size: 1.5rem;
+            color: #4CAF50;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 id="question">Question </h1>
+
+    <div class="container">
+        <button id="yesBtn">OUI</button>
+        <button id="noBtn">NON</button>
+    </div>
+
+    <div id="message">YAY ! ❤️</div>
+
+    <script>
+        const noBtn = document.getElementById('noBtn');
+        const yesBtn = document.getElementById('yesBtn');
+        const message = document.getElementById('message');
+        let scale = 1;
+
+        // Position initiale du bouton NON à côté du bouton OUI
+        function setNoBtnNextToYesBtn() {
+            const yesRect = yesBtn.getBoundingClientRect();
+            const containerRect = yesBtn.parentElement.getBoundingClientRect();
+            // Place le bouton NON à droite du bouton OUI
+            noBtn.style.position = 'absolute';
+            noBtn.style.left = (yesBtn.offsetLeft + yesBtn.offsetWidth + 20) + 'px';
+            noBtn.style.top = yesBtn.offsetTop + 'px';
+        }
+        setNoBtnNextToYesBtn();
+        window.addEventListener('resize', setNoBtnNextToYesBtn);
+
+        // Déplacer le bouton NON à chaque tentative de clic
+        noBtn.addEventListener('mouseenter', (e) => {
+            // Génère une nouvelle position proche du bouton OUI
+            const container = yesBtn.parentElement;
+            const containerRect = container.getBoundingClientRect();
+            const yesRect = yesBtn.getBoundingClientRect();
+            let x, y;
+            let tries = 0;
+            do {
+                // Génère une position aléatoire dans le container
+                x = Math.random() * (container.offsetWidth - noBtn.offsetWidth);
+                y = Math.random() * (container.offsetHeight - noBtn.offsetHeight);
+                // Évite de trop superposer avec le bouton OUI
+                tries++;
+            } while (
+                Math.abs(x - yesBtn.offsetLeft) < yesBtn.offsetWidth + 10 &&
+                Math.abs(y - yesBtn.offsetTop) < yesBtn.offsetHeight + 10 &&
+                tries < 10
+            );
+            noBtn.style.left = `${x}px`;
+            noBtn.style.top = `${y}px`;
+            // Faire grossir le bouton OUI à chaque tentative
+            scale += 0.2;
+            yesBtn.style.transform = `scale(${scale})`;
+        });
+
+        // Action quand on clique sur OUI
+        yesBtn.addEventListener('click', () => {
+            document.getElementById('question').innerText = "Excellent choix !";
+            noBtn.style.display = 'none';
+            yesBtn.style.display = 'none';
+            message.style.display = 'block';
+        });
+    </script>
+</body>
+</html>
