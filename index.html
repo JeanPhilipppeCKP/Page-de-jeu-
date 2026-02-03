@@ -77,48 +77,136 @@
     <div id="message">YAY ! ❤️</div>
 
     <script>
+        /* Animation fluide et marrante pour le bouton "NON"
+           - Utilise une simulation simple de ressort pour un mouvement fluide
+           - Réagit à la souris et crée des bulles emoji amusantes
+           - Transformations GPU-friendly (translate3d)
+        */
         const noBtn = document.getElementById('noBtn');
         const yesBtn = document.getElementById('yesBtn');
         const message = document.getElementById('message');
-        let scale = 1;
+        const container = yesBtn.parentElement;
 
-        // Position initiale du bouton NON à côté du bouton OUI
-        function setNoBtnNextToYesBtn() {
-            const yesRect = yesBtn.getBoundingClientRect();
-            const containerRect = yesBtn.parentElement.getBoundingClientRect();
-            // Place le bouton NON à droite du bouton OUI
-            noBtn.style.position = 'absolute';
-            noBtn.style.left = (yesBtn.offsetLeft + yesBtn.offsetWidth + 20) + 'px';
-            noBtn.style.top = yesBtn.offsetTop + 'px';
+        // Préparations
+        noBtn.style.position = 'absolute';
+        noBtn.style.left = '0';
+        noBtn.style.top = '0';
+        noBtn.style.willChange = 'transform';
+
+        let containerRect, width, height;
+        function updateRects() {
+            containerRect = container.getBoundingClientRect();
+            width = containerRect.width;
+            height = containerRect.height;
         }
-        setNoBtnNextToYesBtn();
-        window.addEventListener('resize', setNoBtnNextToYesBtn);
+        updateRects();
+        window.addEventListener('resize', updateRects);
 
-        // Déplacer le bouton NON à chaque tentative de clic
-        noBtn.addEventListener('mouseenter', (e) => {
-            // Génère une nouvelle position proche du bouton OUI
-            const container = yesBtn.parentElement;
-            const containerRect = container.getBoundingClientRect();
-            const yesRect = yesBtn.getBoundingClientRect();
-            let x, y;
+        // Position et vitesse (physique simple)
+        let pos = { x: yesBtn.offsetLeft + yesBtn.offsetWidth + 20, y: yesBtn.offsetTop };
+        let vel = { x: 0, y: 0 };
+        let target = { x: pos.x, y: pos.y };
+
+        // Paramètres du ressort (ajustez pour plus ou moins d'élasticité)
+        const stiffness = 0.12; // raideur
+        const damping = 0.80;   // amortissement
+
+        function animate() {
+            // Force de rappel vers la cible
+            vel.x += (target.x - pos.x) * stiffness;
+            vel.y += (target.y - pos.y) * stiffness;
+            // Amortissement
+            vel.x *= damping;
+            vel.y *= damping;
+            // Mise à jour de la position
+            pos.x += vel.x;
+            pos.y += vel.y;
+
+            // Rotation et scale liés à la vitesse pour l'effet "marrant"
+            const speed = Math.hypot(vel.x, vel.y);
+            const rot = vel.x * 0.7; // rotation légère
+            const scale = 1 + Math.min(speed / 30, 0.35);
+
+            noBtn.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0) rotate(${rot}deg) scale(${scale})`;
+
+            requestAnimationFrame(animate);
+        }
+        requestAnimationFrame(animate);
+
+        // Choisir une nouvelle cible loin de la souris
+        function chooseNewTargetAwayFrom(mouseX, mouseY) {
+            const margin = 12;
             let tries = 0;
+            let x, y;
             do {
-                // Génère une position aléatoire dans le container
-                x = Math.random() * (container.offsetWidth - noBtn.offsetWidth);
-                y = Math.random() * (container.offsetHeight - noBtn.offsetHeight);
-                // Évite de trop superposer avec le bouton OUI
+                x = Math.random() * (width - noBtn.offsetWidth - margin * 2) + margin;
+                y = Math.random() * (height - noBtn.offsetHeight - margin * 2) + margin;
                 tries++;
-            } while (
-                Math.abs(x - yesBtn.offsetLeft) < yesBtn.offsetWidth + 10 &&
-                Math.abs(y - yesBtn.offsetTop) < yesBtn.offsetHeight + 10 &&
-                tries < 10
-            );
-            noBtn.style.left = `${x}px`;
-            noBtn.style.top = `${y}px`;
-            // Faire grossir le bouton OUI à chaque tentative
-            scale += 0.2;
-            yesBtn.style.transform = `scale(${scale})`;
+            } while (Math.hypot(x - mouseX, y - mouseY) < 110 && tries < 25);
+
+            target.x = x;
+            target.y = y;
+
+            // Parfois, spawn une bulle emoji pour rigoler
+            if (Math.random() < 0.33) spawnEmojiBubble(mouseX + containerRect.left, mouseY + containerRect.top);
+        }
+
+        // Réagir au mouvement de la souris dans le container
+        container.addEventListener('mousemove', (e) => {
+            const rect = container.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            // centre actuel du bouton
+            const btnCenterX = pos.x + noBtn.offsetWidth / 2;
+            const btnCenterY = pos.y + noBtn.offsetHeight / 2;
+            const dist = Math.hypot(mouseX - btnCenterX, mouseY - btnCenterY);
+
+            // Si la souris s'approche, on fuit de façon amusante
+            if (dist < 160) {
+                chooseNewTargetAwayFrom(mouseX, mouseY);
+                // petit effet sur le bouton OUI
+                yesBtn.animate(
+                    [ { transform: 'scale(1)' }, { transform: 'scale(1.12)' }, { transform: 'scale(1)' } ],
+                    { duration: 520, easing: 'ease-out' }
+                );
+            }
         });
+
+        // Si l'utilisateur clique quand même sur NON, on le fait encore plus fuir
+        noBtn.addEventListener('click', (e) => {
+            const rect = container.getBoundingClientRect();
+            const x = (e.clientX - rect.left);
+            const y = (e.clientY - rect.top);
+            chooseNewTargetAwayFrom(x, y);
+        });
+
+        // Bulles emoji amusantes
+        function spawnEmojiBubble(pageX, pageY) {
+            const bubble = document.createElement('div');
+            bubble.textContent = ['😅', '😂', '🙃', '😜'][Math.floor(Math.random() * 4)];
+            Object.assign(bubble.style, {
+                position: 'absolute',
+                left: `${pageX}px`,
+                top: `${pageY}px`,
+                fontSize: '26px',
+                transform: 'translate(-50%,-50%) scale(0)',
+                pointerEvents: 'none',
+                transition: 'transform 520ms cubic-bezier(.2,.9,.3,1), opacity 520ms'
+            });
+            document.body.appendChild(bubble);
+            // Apparition
+            requestAnimationFrame(() => {
+                bubble.style.transform = 'translate(-50%,-140%) scale(1)';
+                bubble.style.opacity = '1';
+            });
+            // Disparition
+            setTimeout(() => {
+                bubble.style.transform = 'translate(-50%,-220%) scale(0.6)';
+                bubble.style.opacity = '0';
+            }, 900);
+            setTimeout(() => bubble.remove(), 1500);
+        }
 
         // Action quand on clique sur OUI
         yesBtn.addEventListener('click', () => {
