@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>La Question</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             display: flex;
             flex-direction: column;
@@ -12,16 +16,34 @@
             justify-content: center;
             height: 100vh;
             margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #121212;
+            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-image: linear-gradient(135deg, rgba(102, 126, 234, 0.4), rgba(240, 147, 251, 0.4)), url('IMG_3868.JPG');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
             color: white;
             overflow: hidden;
         }
 
         h1 {
-            font-size: 3rem;
-            margin-bottom: 50px;
+            font-size: 3.5rem;
+            margin-bottom: 60px;
             text-align: center;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            font-weight: 700;
+            letter-spacing: 1px;
+            animation: fadeInScale 0.8s ease-out;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
 
         .container {
@@ -33,59 +55,107 @@
             justify-content: center;
             align-items: center;
             gap: 20px;
+            filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.15));
         }
 
         button {
-            padding: 15px 30px;
-            font-size: 1.2rem;
-            font-weight: bold;
+            padding: 18px 40px;
+            font-size: 1.3rem;
+            font-weight: 700;
             border: none;
             border-radius: 50px;
             cursor: pointer;
-            transition: transform 0.2s ease;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            letter-spacing: 0.5px;
+        }
+
+        button:active {
+            transform: scaleX(0.95) scaleY(0.95);
         }
 
         #yesBtn {
-            background-color: #4CAF50;
+            background: linear-gradient(135deg, #FF6B9D 0%, #FF8E9E 100%);
             color: white;
             z-index: 10;
+            position: relative;
+        }
+
+        #yesBtn:hover {
+            box-shadow: 0 12px 35px rgba(255, 107, 157, 0.4);
+            transform: translateY(-2px);
         }
 
         #noBtn {
-            background-color: #f44336;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             position: absolute;
         }
 
+        #noBtn:hover {
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+        }
+
         #message {
-            margin-top: 20px;
-            font-size: 1.5rem;
-            color: #4CAF50;
+            margin-top: 40px;
+            font-size: 2rem;
+            color: white;
             display: none;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            font-weight: 700;
+            animation: celebration 0.6s ease-out;
+        }
+
+        @keyframes celebration {
+            0% {
+                opacity: 0;
+                transform: scale(0.5) rotateY(0deg);
+            }
+            50% {
+                transform: scale(1.1) rotateY(10deg);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) rotateY(0deg);
+            }
+        }
+
+        .floating-text {
+            position: absolute;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+            transform: translate(-50%, -50%) scale(0);
+            transition: transform 600ms cubic-bezier(0.2, 0.9, 0.3, 1), opacity 600ms;
         }
     </style>
 </head>
 <body>
 
-    <h1 id="question">Question </h1>
+    <h1 id="question">Do you want to be my wife Palzom ?</h1>
 
     <div class="container">
-        <button id="yesBtn">OUI</button>
-        <button id="noBtn">NON</button>
+        <button id="yesBtn">Yes</button>
+        <button id="noBtn">No</button>
     </div>
 
-    <div id="message">YAY ! ❤️</div>
+    <div id="message">You made the right choice Princess!</div>
 
     <script>
-        /* Animation fluide et marrante pour le bouton "NON"
-           - Utilise une simulation simple de ressort pour un mouvement fluide
-           - Réagit à la souris et crée des bulles emoji amusantes
-           - Transformations GPU-friendly (translate3d)
+        /* Animation fluide pour le bouton "NO" qui fuit
+           Le bouton "YES" grossit progressivement jusqu'à cacher le "NO"
         */
         const noBtn = document.getElementById('noBtn');
         const yesBtn = document.getElementById('yesBtn');
         const message = document.getElementById('message');
         const container = yesBtn.parentElement;
+        const question = document.getElementById('question');
+
+        // Compteur pour faire grossir le YES
+        let attemptCount = 0;
+        const maxAttempts = 300;
 
         // Préparations
         noBtn.style.position = 'absolute';
@@ -122,7 +192,7 @@
             pos.x += vel.x;
             pos.y += vel.y;
 
-            // Rotation et scale liés à la vitesse pour l'effet "marrant"
+            // Rotation et scale liés à la vitesse pour l'effet dynamique
             const speed = Math.hypot(vel.x, vel.y);
             const rot = vel.x * 0.7; // rotation légère
             const scale = 1 + Math.min(speed / 30, 0.35);
@@ -142,13 +212,20 @@
                 x = Math.random() * (width - noBtn.offsetWidth - margin * 2) + margin;
                 y = Math.random() * (height - noBtn.offsetHeight - margin * 2) + margin;
                 tries++;
-            } while (Math.hypot(x - mouseX, y - mouseY) < 110 && tries < 25);
+            } while (Math.hypot(x - mouseX, y - mouseY) < 130 && tries < 25);
 
             target.x = x;
             target.y = y;
 
-            // Parfois, spawn une bulle emoji pour rigoler
-            if (Math.random() < 0.33) spawnEmojiBubble(mouseX + containerRect.left, mouseY + containerRect.top);
+            // Augmenter le compteur et faire grossir le YES
+            attemptCount++;
+            const scaleRatio = Math.min(attemptCount / maxAttempts, 0.99);
+            const newScale = 1 + scaleRatio * 1.8; // Croissance très progressive
+            yesBtn.style.transform = `scale(${newScale})`;
+            yesBtn.style.zIndex = 10 + attemptCount;
+
+            // Afficher des messages textes aléatoirement (3-4 fois)
+            if (Math.random() < 0.06) spawnTextMessage(mouseX + containerRect.left, mouseY + containerRect.top);
         }
 
         // Réagir au mouvement de la souris dans le container
@@ -162,57 +239,57 @@
             const btnCenterY = pos.y + noBtn.offsetHeight / 2;
             const dist = Math.hypot(mouseX - btnCenterX, mouseY - btnCenterY);
 
-            // Si la souris s'approche, on fuit de façon amusante
-            if (dist < 160) {
+            // Si la souris s'approche, on fuit
+            if (dist < 200 && attemptCount < maxAttempts) {
                 chooseNewTargetAwayFrom(mouseX, mouseY);
-                // petit effet sur le bouton OUI
-                yesBtn.animate(
-                    [ { transform: 'scale(1)' }, { transform: 'scale(1.12)' }, { transform: 'scale(1)' } ],
-                    { duration: 520, easing: 'ease-out' }
-                );
             }
         });
 
         // Si l'utilisateur clique quand même sur NON, on le fait encore plus fuir
         noBtn.addEventListener('click', (e) => {
-            const rect = container.getBoundingClientRect();
-            const x = (e.clientX - rect.left);
-            const y = (e.clientY - rect.top);
-            chooseNewTargetAwayFrom(x, y);
+            if (attemptCount < maxAttempts) {
+                const rect = container.getBoundingClientRect();
+                const x = (e.clientX - rect.left);
+                const y = (e.clientY - rect.top);
+                chooseNewTargetAwayFrom(x, y);
+            }
         });
 
-        // Bulles emoji amusantes
-        function spawnEmojiBubble(pageX, pageY) {
-            const bubble = document.createElement('div');
-            bubble.textContent = ['😅', '😂', '🙃', '😜'][Math.floor(Math.random() * 4)];
-            Object.assign(bubble.style, {
-                position: 'absolute',
+        // Messages flottants amusants
+        function spawnTextMessage(pageX, pageY) {
+            const messages = ['Are you sure?', 'Please?', 'Come on...', 'Really?'];
+            const textMessage = messages[Math.floor(Math.random() * messages.length)];
+            
+            const textDiv = document.createElement('div');
+            textDiv.className = 'floating-text';
+            textDiv.textContent = textMessage;
+            Object.assign(textDiv.style, {
                 left: `${pageX}px`,
                 top: `${pageY}px`,
-                fontSize: '26px',
-                transform: 'translate(-50%,-50%) scale(0)',
-                pointerEvents: 'none',
-                transition: 'transform 520ms cubic-bezier(.2,.9,.3,1), opacity 520ms'
+                opacity: '1'
             });
-            document.body.appendChild(bubble);
+            document.body.appendChild(textDiv);
+            
             // Apparition
             requestAnimationFrame(() => {
-                bubble.style.transform = 'translate(-50%,-140%) scale(1)';
-                bubble.style.opacity = '1';
+                textDiv.style.transform = 'translate(-50%, -80%) scale(1)';
+                textDiv.style.opacity = '1';
             });
+            
             // Disparition
             setTimeout(() => {
-                bubble.style.transform = 'translate(-50%,-220%) scale(0.6)';
-                bubble.style.opacity = '0';
-            }, 900);
-            setTimeout(() => bubble.remove(), 1500);
+                textDiv.style.transform = 'translate(-50%, -150%) scale(0.7)';
+                textDiv.style.opacity = '0';
+            }, 1000);
+            
+            setTimeout(() => textDiv.remove(), 1600);
         }
 
         // Action quand on clique sur OUI
         yesBtn.addEventListener('click', () => {
-            document.getElementById('question').innerText = "Excellent choix !";
             noBtn.style.display = 'none';
             yesBtn.style.display = 'none';
+            question.style.display = 'none';
             message.style.display = 'block';
         });
     </script>
